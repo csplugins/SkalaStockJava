@@ -1,0 +1,22 @@
+group 'me.cody'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+sourceCompatibility = JavaVersion.VERSION_1_6
+targetCompatibility = JavaVersion.VERSION_1_6
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'Main'
+    }
+}
+
+dependencies {
+    compile group: 'com.yahoofinance-api', name: 'YahooFinanceAPI', version: '3.4.0'
+}
