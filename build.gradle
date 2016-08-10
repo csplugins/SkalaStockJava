@@ -1,8 +1,19 @@
 group 'me.cody'
 version '1.0-SNAPSHOT'
 
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceCompatibility = JavaVersion.VERSION_1_6
 targetCompatibility = JavaVersion.VERSION_1_6
@@ -13,10 +24,20 @@ repositories {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'Main'
+        attributes 'Main-Class': 'me.cody.skalastock.Main'
     }
 }
 
 dependencies {
     compile group: 'com.yahoofinance-api', name: 'YahooFinanceAPI', version: '3.4.0'
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
 }
+
+shadowJar {
+    dependencies {
+        include(dependency('com.yahoofinance-api:YahooFinanceAPI:3.4.0'))
+        include(dependency('commons-io:commons-io:2.5'))
+    }
+}
+
+build.dependsOn(shadowJar)

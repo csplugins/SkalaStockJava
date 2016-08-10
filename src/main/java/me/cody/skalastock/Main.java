@@ -1,3 +1,5 @@
+package me.cody.skalastock;
+
 import yahoofinance.YahooFinance;
 import yahoofinance.Stock;
 import yahoofinance.histquotes.*;
