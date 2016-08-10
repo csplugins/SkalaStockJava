@@ -42,9 +42,8 @@ public class Main{
     class ChoiceListener implements ActionListener{
       @Override
       public void actionPerformed(ActionEvent e) {
-        List<String[]> letterList = new ArrayList<String[]>();
+        List<String> symbols = new ArrayList<String>();
         for(int letter = 0; letter < 26; ++letter){
-          List<String> symbols = new ArrayList<String>();
           String urlString =
             "http://www.nasdaq.com/screening/companies-by-name.aspx?letter="
             + (char)(letter+65) + "&render=download";
@@ -62,16 +61,11 @@ public class Main{
           }
           String[] str2 = str.split("\n\"");
           for(int i = 1; i < str2.length; ++i){
-            String cap = str2[i].split("\"")[6];
-            //if(!cap.contains("B")){
-              //continue;
-            //}
             symbols.add(str2[i].split("\"")[0].replaceAll("[\\s+~]",""));
           }
-          String[] symbols2 = new String[symbols.size()];
-          symbols2 = symbols.toArray(symbols2);
-          letterList.add(symbols2);
         }
+        String[] symbolsArray = new String[symbols.size()];
+        symbolsArray = symbols.toArray(symbolsArray);
 
         System.out.println("-----------SKALASTOCK-----------");
 
@@ -81,28 +75,28 @@ public class Main{
            path = URLDecoder.decode(path, "UTF-8");
            path = path.split("Main.jar")[0];
            path = path.replaceFirst("^/(.:/)", "$1");
-           System.out.println("\"" + path + "\"");
            writer = new PrintWriter(path + "PeRatiosSorted.html", "UTF-8");
          }catch(IOException ex){
            ex.printStackTrace();
          }
          String content = "";
          try{
-           System.out.println(Paths.get(path + "htmlHelper/htmlStart.txt"));
            content = new String(Files.readAllBytes(Paths.get(path + "htmlHelper/htmlStart.txt")));
          }catch(IOException ex){
            ex.printStackTrace();
          }
          writer.println(content);
 
-        for(String[] symbols2 : letterList){
+        int batchSize = 750;
+        for(int i = 0; i < symbolsArray.length; i = i + batchSize){
+          String[] batch = Arrays.copyOfRange(symbolsArray, i, Math.min(i + batchSize, symbolsArray.length));
           Map<String, Stock> stocks = null;
           try{
-            stocks = YahooFinance.get(symbols2);
+            stocks = YahooFinance.get(batch);
           }catch(IOException ex){
             ex.printStackTrace();
           }
-          for(String s : symbols2){
+          for(String s : batch){
             if(stocks.get(s).getStats().getPe() == null){
               continue;
             }
@@ -162,7 +156,5 @@ public class Main{
     BigDecimal change = stock.getQuote().getChangeInPercent();
     BigDecimal peg = stock.getStats().getPeg();
     BigDecimal dividend = stock.getDividend().getAnnualYieldPercent();
-    //stock.print();
-    //Stock stock2 = YahooFinance.get("TSLA");
   }
 }
