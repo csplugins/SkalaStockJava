@@ -4,23 +4,9 @@
 *.iws
 .idea/
 
-# Eclipse
-/.classpath
-/.project
-/.settings
-
-# Netbeans
-/nbproject
-
-# Maven
-/target
-
 # Gradle
 /build
 .gradle
-
-# vim
-.*.sw[a-p]
 
 # OSX
 /.DS_Store

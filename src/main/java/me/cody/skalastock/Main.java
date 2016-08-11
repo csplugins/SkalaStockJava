@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.nio.file.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 
 public class Main{
   public static void main(String[] args) throws java.io.IOException{
@@ -72,10 +73,12 @@ public class Main{
         System.out.println("-----------SKALASTOCK-----------");
 
         PrintWriter writer = null;
+        //System.out.println(ClassLoader.getSystemClassLoader().getResource("htmlHelper/htmlStart.txt"));
         String path = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        System.out.println(path);
          try{
            path = URLDecoder.decode(path, "UTF-8");
-           path = path.split("Main.jar")[0];
+           path = path.split("SkalaStock-1.0-SNAPSHOT-all.jar")[0];
            path = path.replaceFirst("^/(.:/)", "$1");
            writer = new PrintWriter(path + "PeRatiosSorted.html", "UTF-8");
          }catch(IOException ex){
@@ -83,7 +86,14 @@ public class Main{
          }
          String content = "";
          try{
-           content = new String(Files.readAllBytes(Paths.get(path + "htmlHelper/htmlStart.txt")));
+           //System.out.println(ClassLoader.getSystemClassLoader().getResource("htmlHelper/htmlStart.txt").getPath());
+           InputStream fis = ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/htmlStart.txt");
+           StringBuilder builder = new StringBuilder();
+           int ch;
+          while((ch = fis.read()) != -1){
+            builder.append((char)ch);
+          }
+           content = builder.toString();
          }catch(IOException ex){
            ex.printStackTrace();
          }
@@ -99,6 +109,10 @@ public class Main{
             ex.printStackTrace();
           }
           for(String s : batch){
+            //System.out.println(s);
+            if(stocks.get(s) == null){
+              continue;
+            }
             if(stocks.get(s).getStats().getPe() == null){
               continue;
             }
@@ -107,6 +121,9 @@ public class Main{
               continue;
             }
             if(stocks.get(s).getStats().getMarketCap().compareTo(new BigDecimal(mktCapField.getText().replaceAll(",", ""))) == -1){
+              continue;
+            }
+            if(stocks.get(s).getQuote().getPreviousClose() == null){
               continue;
             }
             BigDecimal yearLow = stocks.get(s).getQuote().getYearLow();
@@ -130,7 +147,13 @@ public class Main{
         }
 
         try{
-          content = new String(Files.readAllBytes(Paths.get(path + "htmlHelper/htmlEnd.txt")));
+          InputStream fis = ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/htmlEnd.txt");
+          StringBuilder builder = new StringBuilder();
+          int ch;
+         while((ch = fis.read()) != -1){
+           builder.append((char)ch);
+         }
+          content = builder.toString();//new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemClassLoader().getResource("htmlHelper/htmlEnd.txt").getPath())));
         }catch(IOException ex){
           ex.printStackTrace();
         }

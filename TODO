@@ -2,3 +2,9 @@
 =======
 2.05, 1.66, 2.05, 2.08 Earnings per share by quarter = 7.84
 Divided by close
+
+
+
+./gradlew build
+cd build/libs
+java -jar SkalaStock-1.0-SNAPSHOT-all.jar
