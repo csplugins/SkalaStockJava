@@ -1,6 +1,6 @@
 </table>
 
-<script src="http://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+<script src="sorttable.js"></script>
 <script>
   window.onload = function () {
     var myTH = document.getElementsByTagName("th")[1];

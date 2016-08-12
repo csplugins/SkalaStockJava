@@ -1,5 +1,6 @@
 package me.cody.skalastock;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -19,7 +20,7 @@ import java.util.Map;
 /**
  * Created by cody on 8/11/16.
  */
-public class ChoiceListener implements ActionListener {
+class ChoiceListener implements ActionListener {
 
     private final JFrame frame;
 
@@ -28,7 +29,7 @@ public class ChoiceListener implements ActionListener {
     private final JTextField lowPercentField;
 
 
-    public ChoiceListener(JFrame parent, JTextField mktCapField, JTextField dividendField, JTextField lowPercentField) {
+    ChoiceListener(JFrame parent, JTextField mktCapField, JTextField dividendField, JTextField lowPercentField) {
         this.frame = parent;
         this.mktCapField = mktCapField;
         this.dividendField = dividendField;
@@ -65,13 +66,14 @@ public class ChoiceListener implements ActionListener {
         System.out.println("-----------SKALASTOCK-----------");
 
         PrintWriter writer = null;
-        //System.out.println(ClassLoader.getSystemClassLoader().getResource("htmlHelper/htmlStart.txt"));
         try {
-            writer = new PrintWriter("./PeRatiosSorted.html", "UTF-8");
+            new File("SkalaStock").mkdir();
+            File f = new File("SkalaStock/sorttable.js");
+            FileUtils.copyInputStreamToFile(ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/sorttable.js"), f);
+            writer = new PrintWriter("SkalaStock/Results.html", "UTF-8");
 
             String content = "";
             try {
-                //System.out.println(ClassLoader.getSystemClassLoader().getResource("htmlHelper/htmlStart.txt").getPath());
                 InputStream fis = ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/htmlStart.txt");
                 StringBuilder builder = new StringBuilder();
                 int ch;
@@ -146,7 +148,7 @@ public class ChoiceListener implements ActionListener {
                 }
             }
 
-            File htmlFile = new File("./PeRatiosSorted.html");
+            File htmlFile = new File("SkalaStock/Results.html");
             try {
                 Desktop.getDesktop().browse(htmlFile.toURI());
             } catch (IOException ex) {
@@ -156,6 +158,8 @@ public class ChoiceListener implements ActionListener {
         } catch (FileNotFoundException e1) {
             e1.printStackTrace();
         } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
+        } catch (IOException e1) {
             e1.printStackTrace();
         }
     }
