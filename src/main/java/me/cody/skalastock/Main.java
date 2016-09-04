@@ -1,25 +1,9 @@
 package me.cody.skalastock;
 
-import org.apache.commons.io.IOUtils;
-import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.LogManager;
 
 public class Main {
@@ -51,13 +35,5 @@ public class Main {
         frame.setSize(500, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
-
-        Stock stock = YahooFinance.get("MMM");
-        BigDecimal yearLow = stock.getQuote().getYearLow();
-        BigDecimal yearHigh = stock.getQuote().getYearHigh();
-        BigDecimal price = stock.getQuote().getPrice();
-        BigDecimal change = stock.getQuote().getChangeInPercent();
-        BigDecimal peg = stock.getStats().getPeg();
-        BigDecimal dividend = stock.getDividend().getAnnualYieldPercent();
     }
 }
