@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Created-By: cody skala
+Class-Path: commons-io.jar YahooFinanceAPI.jar
+Main-Class: Main

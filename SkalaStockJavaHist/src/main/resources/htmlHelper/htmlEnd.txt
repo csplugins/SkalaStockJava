@@ -1,0 +1,12 @@
+</table>
+
+<script src="../../sorttable.js"></script>
+<script>
+  window.onload = function () {
+    var myTH = document.getElementsByTagName("th")[3];
+    sorttable.innerSortFunction.apply(myTH, []);
+  }
+</script>
+
+</body>
+</html>

@@ -5,7 +5,8 @@
 .idea/
 
 # Gradle
-/build
+/SkalaStockJava/build
+/SkalaStockJavaHist/build
 .gradle
 
 # OSX
