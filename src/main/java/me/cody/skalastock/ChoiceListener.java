@@ -11,11 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by cody on 8/11/16.
@@ -66,11 +66,26 @@ class ChoiceListener implements ActionListener {
         System.out.println("-----------SKALASTOCK-----------");
 
         PrintWriter writer = null;
+        Date date = Calendar.getInstance().getTime();
+        String year = new SimpleDateFormat("yyyy").format(date);
+        String month = new SimpleDateFormat("MMM").format(date);
+        String day = new SimpleDateFormat("d").format(date);
         try {
-            new File("SkalaStock").mkdir();
-            File f = new File("SkalaStock/sorttable.js");
-            FileUtils.copyInputStreamToFile(ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/sorttable.js"), f);
-            writer = new PrintWriter("SkalaStock/Results.html", "UTF-8");
+            File initDir = new File("SkalaStock");
+            if(!initDir.exists()){
+                new File("SkalaStock").mkdir();
+                File f = new File("SkalaStock/sorttable.js");
+                FileUtils.copyInputStreamToFile(ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/sorttable.js"), f);
+            }
+            File yearFolder = new File("SkalaStock/" + year);
+            if(!yearFolder.exists()){
+                new File("SkalaStock/" + year).mkdir();
+            }
+            File monthFolder = new File("SkalaStock/" + year + "/" + month);
+            if(!monthFolder.exists()){
+                new File("SkalaStock/" + year + "/" + month).mkdir();
+            }
+            writer = new PrintWriter("SkalaStock/" + year + "/" + month + "/" + day + ".html", "UTF-8");
 
             String content = "";
             try {
@@ -85,6 +100,22 @@ class ChoiceListener implements ActionListener {
                 ex.printStackTrace();
             }
             writer.println(content);
+
+            writer.println(month + " " + day + " " + year);
+
+            String content2 = "";
+            try {
+                InputStream fis = ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/htmlMid.txt");
+                StringBuilder builder = new StringBuilder();
+                int ch;
+                while ((ch = fis.read()) != -1) {
+                    builder.append((char) ch);
+                }
+                content2 = builder.toString();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            writer.println(content2);
 
             int batchSize = 750;
             for (int i = 0; i < symbolsArray.length; i = i + batchSize) {
@@ -120,12 +151,21 @@ class ChoiceListener implements ActionListener {
                     if (stocks.get(s).getQuote().getPreviousClose().compareTo(tenPercentLow) == 1) {
                         continue;
                     }
+                    BigDecimal price = stocks.get(s).getQuote().getPrice();
+                    BigDecimal calculatedPercent = yearHigh.subtract(yearLow);
+                    calculatedPercent = (price.subtract(yearLow)).divide(calculatedPercent, 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)).setScale(2);
+                    String mktCapCommas = stocks.get(s).getStats().getMarketCap().toString();
+                    for(int k = mktCapCommas.length()-6; k > -1; k = k - 3){
+                        mktCapCommas = mktCapCommas.subSequence(0, k).toString() + "," + mktCapCommas.subSequence(k, mktCapCommas.length());
+                    }
 
                     writer.println("  <tr>");
                     writer.println("    <td><a target=\"_blank\" href=\"http://finance.yahoo.com/quote/" + s + "?p=" + s + "\">" + s + "</a></td>");
+                    writer.println("    <td>" + price + "</td>");
+                    writer.println("    <td>" + calculatedPercent + "</td>");
                     writer.println("    <td>" + stocks.get(s).getStats().getPe() + "</td>");
                     writer.println("    <td>" + stocks.get(s).getDividend().getAnnualYieldPercent() + "</td>");
-                    writer.println("    <td>" + stocks.get(s).getStats().getMarketCap() + "</td>");
+                    writer.println("    <td>" + mktCapCommas + "</td>");
                     writer.println("    <td>" + stocks.get(s).getQuote().getYearHigh() + "</td>");
                     writer.println("    <td>" + stocks.get(s).getQuote().getYearLow() + "</td>");
                     writer.println("  </tr>");
@@ -148,7 +188,7 @@ class ChoiceListener implements ActionListener {
                 }
             }
 
-            File htmlFile = new File("SkalaStock/Results.html");
+            File htmlFile = new File("SkalaStock/" + year + "/" + month + "/" + day + ".html");
             try {
                 Desktop.getDesktop().browse(htmlFile.toURI());
             } catch (IOException ex) {
