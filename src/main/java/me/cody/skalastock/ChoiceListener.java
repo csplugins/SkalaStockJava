@@ -155,7 +155,7 @@ class ChoiceListener implements ActionListener {
                     BigDecimal calculatedPercent = yearHigh.subtract(yearLow);
                     calculatedPercent = (price.subtract(yearLow)).divide(calculatedPercent, 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)).setScale(2);
                     String mktCapCommas = stocks.get(s).getStats().getMarketCap().toString();
-                    for(int k = mktCapCommas.length()-6; k > -1; k = k - 3){
+                    for(int k = mktCapCommas.length() - 6; k > 0; k = k - 3){
                         mktCapCommas = mktCapCommas.subSequence(0, k).toString() + "," + mktCapCommas.subSequence(k, mktCapCommas.length());
                     }
 
