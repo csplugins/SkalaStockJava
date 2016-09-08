@@ -46,7 +46,7 @@ class ChoiceListener implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         List<String> symbols = new ArrayList<String>();
-        for (int letter = 0; letter < 1; ++letter) {
+        for (int letter = 0; letter < 26; ++letter) {
             String urlString =
                     "http://www.nasdaq.com/screening/companies-by-name.aspx?letter="
                             + (char) (letter + 65) + "&render=download";
@@ -74,7 +74,8 @@ class ChoiceListener implements ActionListener {
 
         PrintWriter writer = null;
         Date date = Calendar.getInstance().getTime();
-        String year = new SimpleDateFormat("yyyy").format(date);
+        String currentYear = new SimpleDateFormat("yyyy").format(date);
+        int targetYear = Integer.parseInt(yearField.getText());
 
         try {
             File initDir = new File("SkalaStock");
@@ -87,7 +88,7 @@ class ChoiceListener implements ActionListener {
             if(!historyFolder.exists()){
                 new File("SkalaStock/History").mkdir();
             }
-            writer = new PrintWriter("SkalaStock/History/" + year + ".html", "UTF-8");
+            writer = new PrintWriter("SkalaStock/History/" + targetYear + ".html", "UTF-8");
 
             String content = "";
             try {
@@ -103,7 +104,7 @@ class ChoiceListener implements ActionListener {
             }
             writer.println(content);
 
-            writer.println(year);
+            writer.println(targetYear);
 
             String content2 = "";
             try {
@@ -120,7 +121,6 @@ class ChoiceListener implements ActionListener {
             writer.println(content2);
 
             int batchSize = 750;
-            int targetYear = Integer.parseInt(yearField.getText());
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.YEAR, targetYear - 1);
             cal.set(Calendar.MONTH, Calendar.JANUARY);
@@ -141,27 +141,48 @@ class ChoiceListener implements ActionListener {
                 for (String s : batch) {
                     //System.out.println(s);
                     if (stocks.get(s) == null) {
-                        //System.out.println("Problem with stock " + s);
+                        System.out.println("Problem loading stock " + s);
                         continue;
                     }
-                    //HistoricalQuote item = stocks.get(s).getHistory().get(0);
-                    //item.getClose();
-                    //System.out.println(stocks.get(s));
+                    if(stocks.get(s).getStats().getMarketCap() == null){
+                        continue;
+                    }
+                    if (stocks.get(s).getStats().getMarketCap().compareTo(new BigDecimal(mktCapField.getText().replaceAll(",", ""))) == -1) {
+                        continue;
+                    }
+
+                    List<HistoricalQuote> histQuotes = null;
                     try{
-                        stocks.get(s).getHistory(cal, cal2, Interval.DAILY);
+                        histQuotes = stocks.get(s).getHistory(cal, cal2, Interval.DAILY);
                     }catch(FileNotFoundException e1){
                         continue;
-                    }//catch(SocketTimeoutException e1){
-                        //continue;
-                    //}
-                    System.out.println("Here");
-                    List<HistoricalQuote> histQuotes = stocks.get(s).getHistory(cal, cal2, Interval.DAILY);//stocks.get(s).getHistory(cal, cal, Interval.DAILY);
+                    }catch(SocketTimeoutException e1){
+                        System.out.println("Error fetching history for " + s + ". SocketTimeoutException");
+                        continue;
+                    }
                     if(histQuotes.isEmpty()){
                         continue;
                     }
-                    System.out.println(histQuotes.get(0));
-                    histQuotes.get(0).getClose();
-                    if(stocks.get(s).getStats().getMarketCap() == null){
+                    if(histQuotes.get(0).getClose() == null){
+                        continue;
+                    }
+                    BigDecimal yearLow = histQuotes.get(0).getLow();
+                    BigDecimal yearHigh = histQuotes.get(0).getHigh();
+
+                    for(int k = 1; k < histQuotes.size(); ++k){
+                        if(yearLow == null || yearLow.compareTo(histQuotes.get(0).getLow()) == 1){
+                            yearLow = histQuotes.get(0).getLow();
+                        }
+                        if(yearHigh == null || yearHigh.compareTo(histQuotes.get(0).getHigh()) == -1){
+                            yearLow = histQuotes.get(0).getLow();
+                        }
+                    }
+                    if(yearHigh == null || yearLow == null){
+                        continue;
+                    }
+                    BigDecimal percent = new BigDecimal(lowPercentField.getText()).multiply(new BigDecimal(0.01));
+                    BigDecimal tenPercentLow = yearHigh.subtract(yearLow).multiply(percent).add(yearLow);
+                    if (histQuotes.get(0).getClose().compareTo(tenPercentLow) == 1) {
                         continue;
                     }
 
@@ -174,33 +195,20 @@ class ChoiceListener implements ActionListener {
                         continue;
                     }
                     Elements yearsFound = doc.select("#valuation_history_table tr:nth-child(2) td");
-                    if(Integer.parseInt(year) - targetYear + 2 > yearsFound.size()){
+                    if(Integer.parseInt(currentYear) - targetYear + 2 > yearsFound.size()){
                         continue;
                     }
-                    String pe = yearsFound.get(yearsFound.size() - (Integer.parseInt(year) - targetYear) - 2).text();
+                    String pe = yearsFound.get(yearsFound.size() - (Integer.parseInt(currentYear) - targetYear) - 2).text();
                     //System.out.println(pe);
                     if(pe.equals("—")){
                         continue;
                     }
 
-//                    if (stocks.get(s).getStats().getPe() == null) {
-//                        continue;
-//                    }
-                    if (stocks.get(s).getStats().getMarketCap().compareTo(new BigDecimal(mktCapField.getText().replaceAll(",", ""))) == -1) {
-                        continue;
-                    }
-                    if (stocks.get(s).getQuote().getPreviousClose() == null) {
-                        continue;
-                    }
-                    BigDecimal yearLow = stocks.get(s).getQuote().getYearLow();
-                    BigDecimal yearHigh = stocks.get(s).getQuote().getYearHigh();
-                    BigDecimal percent = new BigDecimal(lowPercentField.getText()).multiply(new BigDecimal(0.01));
-                    BigDecimal tenPercentLow = yearHigh.subtract(yearLow).multiply(percent).add(yearLow);
-                    if (stocks.get(s).getQuote().getPreviousClose().compareTo(tenPercentLow) == 1) {
-                        continue;
-                    }
-                    BigDecimal price = stocks.get(s).getQuote().getPrice();
+                    BigDecimal price = histQuotes.get(0).getClose();
                     BigDecimal calculatedPercent = yearHigh.subtract(yearLow);
+                    if(calculatedPercent.compareTo(new BigDecimal(0)) == 0){
+                        continue;
+                    }
                     calculatedPercent = (price.subtract(yearLow)).divide(calculatedPercent, 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)).setScale(2);
                     String mktCapCommas = stocks.get(s).getStats().getMarketCap().toString();
                     for(int k = mktCapCommas.length() - 6; k > 0; k = k - 3){
@@ -235,7 +243,7 @@ class ChoiceListener implements ActionListener {
                 }
             }
 
-            File htmlFile = new File("SkalaStock/History/" + year + ".html");
+            File htmlFile = new File("SkalaStock/History/" + targetYear + ".html");
             try {
                 Desktop.getDesktop().browse(htmlFile.toURI());
             } catch (IOException ex) {
