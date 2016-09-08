@@ -1,5 +1,6 @@
 package me.cody.skalastock;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
@@ -17,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -30,15 +32,14 @@ class ChoiceListener implements ActionListener {
     private final JFrame frame;
 
     private final JTextField mktCapField;
-    private final JTextField dividendField;
+    private final JTextField yearField;
     private final JTextField lowPercentField;
-    private final int targetYear = 2010;
 
 
-    ChoiceListener(JFrame parent, JTextField mktCapField, JTextField dividendField, JTextField lowPercentField) {
+    ChoiceListener(JFrame parent, JTextField mktCapField, JTextField yearField, JTextField lowPercentField) {
         this.frame = parent;
         this.mktCapField = mktCapField;
-        this.dividendField = dividendField;
+        this.yearField = yearField;
         this.lowPercentField = lowPercentField;
     }
 
@@ -74,8 +75,6 @@ class ChoiceListener implements ActionListener {
         PrintWriter writer = null;
         Date date = Calendar.getInstance().getTime();
         String year = new SimpleDateFormat("yyyy").format(date);
-        String month = new SimpleDateFormat("MMM").format(date);
-        String day = new SimpleDateFormat("d").format(date);
 
         try {
             File initDir = new File("SkalaStock");
@@ -84,15 +83,11 @@ class ChoiceListener implements ActionListener {
                 File f = new File("SkalaStock/sorttable.js");
                 FileUtils.copyInputStreamToFile(ClassLoader.getSystemClassLoader().getResourceAsStream("htmlHelper/sorttable.js"), f);
             }
-            File yearFolder = new File("SkalaStock/" + year);
-            if(!yearFolder.exists()){
-                new File("SkalaStock/" + year).mkdir();
+            File historyFolder = new File("SkalaStock/History");
+            if(!historyFolder.exists()){
+                new File("SkalaStock/History").mkdir();
             }
-            File monthFolder = new File("SkalaStock/" + year + "/" + month);
-            if(!monthFolder.exists()){
-                new File("SkalaStock/" + year + "/" + month).mkdir();
-            }
-            writer = new PrintWriter("SkalaStock/" + year + "/" + month + "/" + day + ".html", "UTF-8");
+            writer = new PrintWriter("SkalaStock/History/" + year + ".html", "UTF-8");
 
             String content = "";
             try {
@@ -108,7 +103,7 @@ class ChoiceListener implements ActionListener {
             }
             writer.println(content);
 
-            writer.println(month + " " + day + " " + year);
+            writer.println(year);
 
             String content2 = "";
             try {
@@ -125,21 +120,23 @@ class ChoiceListener implements ActionListener {
             writer.println(content2);
 
             int batchSize = 750;
+            int targetYear = Integer.parseInt(yearField.getText());
             Calendar cal = Calendar.getInstance();
-            cal.set(Calendar.YEAR, targetYear);
+            cal.set(Calendar.YEAR, targetYear - 1);
             cal.set(Calendar.MONTH, Calendar.JANUARY);
             cal.set(Calendar.DAY_OF_MONTH, 1);
             Calendar cal2 = Calendar.getInstance();
-            cal2.set(Calendar.YEAR, targetYear + 1);
+            cal2.set(Calendar.YEAR, targetYear);
             cal2.set(Calendar.MONTH, Calendar.JANUARY);
             cal2.set(Calendar.DAY_OF_MONTH, 1);
             for (int i = 0; i < symbolsArray.length; i = i + batchSize) {
                 String[] batch = Arrays.copyOfRange(symbolsArray, i, Math.min(i + batchSize, symbolsArray.length));
                 Map<String, Stock> stocks = null;
                 try {
-                    stocks = YahooFinance.get(batch, cal, cal2, Interval.MONTHLY);
+                    stocks = YahooFinance.get(batch);
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    continue;
+                    //ex.printStackTrace();
                 }
                 for (String s : batch) {
                     //System.out.println(s);
@@ -147,29 +144,41 @@ class ChoiceListener implements ActionListener {
                         //System.out.println("Problem with stock " + s);
                         continue;
                     }
-                    HistoricalQuote item = stocks.get(s).getHistory().get(0);
-                    item.getClose();
-                    //List<HistoricalQuote> histQuotes = stocks.get(s).getHistory(cal, cal, Interval.MONTHLY);
-                    //histQuotes.get(0).getClose();
+                    //HistoricalQuote item = stocks.get(s).getHistory().get(0);
+                    //item.getClose();
+                    //System.out.println(stocks.get(s));
+                    try{
+                        stocks.get(s).getHistory(cal, cal2, Interval.DAILY);
+                    }catch(FileNotFoundException e1){
+                        continue;
+                    }//catch(SocketTimeoutException e1){
+                        //continue;
+                    //}
+                    System.out.println("Here");
+                    List<HistoricalQuote> histQuotes = stocks.get(s).getHistory(cal, cal2, Interval.DAILY);//stocks.get(s).getHistory(cal, cal, Interval.DAILY);
+                    if(histQuotes.isEmpty()){
+                        continue;
+                    }
+                    System.out.println(histQuotes.get(0));
+                    histQuotes.get(0).getClose();
                     if(stocks.get(s).getStats().getMarketCap() == null){
                         continue;
                     }
 
                     Document doc = null;
                     try {
-                        System.out.println(s);
-                        //http://financials.morningstar.com/valuate/valuation-history.action?&t=XNAS:AAPL&region=usa&culture=en-US&cur=&type=price-earnings
+                        //System.out.println(s);
                         doc = Jsoup.connect("http://financials.morningstar.com/valuate/valuation-history.action?&t=" + s + "&region=usa&culture=en-US&cur=&type=price-earnings").get();
                     } catch (IOException e1) {
                         //e1.printStackTrace();
                         continue;
                     }
-                    Elements newsHeadlines = doc.select("#valuation_history_table tr:nth-child(2) td");
-                    if(Integer.parseInt(year) - newsHeadlines.size() + 1 > targetYear){
+                    Elements yearsFound = doc.select("#valuation_history_table tr:nth-child(2) td");
+                    if(Integer.parseInt(year) - targetYear + 2 > yearsFound.size()){
                         continue;
                     }
-                    String pe = newsHeadlines.get(newsHeadlines.size() - (Integer.parseInt(year) - targetYear) - 1).text();
-                    System.out.println(pe);
+                    String pe = yearsFound.get(yearsFound.size() - (Integer.parseInt(year) - targetYear) - 2).text();
+                    //System.out.println(pe);
                     if(pe.equals("—")){
                         continue;
                     }
@@ -177,10 +186,6 @@ class ChoiceListener implements ActionListener {
 //                    if (stocks.get(s).getStats().getPe() == null) {
 //                        continue;
 //                    }
-                    if (stocks.get(s).getDividend().getAnnualYieldPercent() == null
-                            || stocks.get(s).getDividend().getAnnualYieldPercent().compareTo(new BigDecimal(dividendField.getText())) == -1) {
-                        continue;
-                    }
                     if (stocks.get(s).getStats().getMarketCap().compareTo(new BigDecimal(mktCapField.getText().replaceAll(",", ""))) == -1) {
                         continue;
                     }
@@ -207,7 +212,6 @@ class ChoiceListener implements ActionListener {
                     writer.println("    <td>" + price + "</td>");
                     writer.println("    <td>" + calculatedPercent + "</td>");
                     writer.println("    <td>" + pe/*stocks.get(s).getStats().getPe()*/ + "</td>");
-                    writer.println("    <td>" + stocks.get(s).getDividend().getAnnualYieldPercent() + "</td>");
                     writer.println("    <td>" + mktCapCommas + "</td>");
                     writer.println("    <td>" + stocks.get(s).getQuote().getYearHigh() + "</td>");
                     writer.println("    <td>" + stocks.get(s).getQuote().getYearLow() + "</td>");
@@ -231,7 +235,7 @@ class ChoiceListener implements ActionListener {
                 }
             }
 
-            File htmlFile = new File("SkalaStock/" + year + "/" + month + "/" + day + ".html");
+            File htmlFile = new File("SkalaStock/History/" + year + ".html");
             try {
                 Desktop.getDesktop().browse(htmlFile.toURI());
             } catch (IOException ex) {

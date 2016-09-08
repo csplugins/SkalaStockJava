@@ -7,8 +7,7 @@
     <th>Price</th>
     <th>% Low</th>
     <th>PE</th>
-    <th>Dividend(%)</th>
-    <th>Market Cap($)</th>
+    <th>Current Market Cap($)</th>
     <th>52 Week High($)</th>
     <th>52 Week Low($)</th>
   </tr>
