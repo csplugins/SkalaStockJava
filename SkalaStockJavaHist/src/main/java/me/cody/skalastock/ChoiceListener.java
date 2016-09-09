@@ -170,16 +170,17 @@ class ChoiceListener implements ActionListener {
                     BigDecimal yearHigh = histQuotes.get(0).getHigh();
 
                     for(int k = 1; k < histQuotes.size(); ++k){
-                        if(yearLow == null || yearLow.compareTo(histQuotes.get(0).getLow()) == 1){
-                            yearLow = histQuotes.get(0).getLow();
+                        if(yearLow == null || yearLow.compareTo(histQuotes.get(k).getLow()) == 1){
+                            yearLow = histQuotes.get(k).getLow();
                         }
-                        if(yearHigh == null || yearHigh.compareTo(histQuotes.get(0).getHigh()) == -1){
-                            yearLow = histQuotes.get(0).getLow();
+                        if(yearHigh == null || yearHigh.compareTo(histQuotes.get(k).getHigh()) == -1){
+                            yearHigh = histQuotes.get(k).getHigh();
                         }
                     }
                     if(yearHigh == null || yearLow == null){
                         continue;
                     }
+                    //System.out.println(histQuotes.get(0));
                     BigDecimal percent = new BigDecimal(lowPercentField.getText()).multiply(new BigDecimal(0.01));
                     BigDecimal tenPercentLow = yearHigh.subtract(yearLow).multiply(percent).add(yearLow);
                     if (histQuotes.get(0).getClose().compareTo(tenPercentLow) == 1) {
